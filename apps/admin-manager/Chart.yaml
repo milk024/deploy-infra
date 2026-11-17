@@ -1,0 +1,6 @@
+apiVersion: v2
+name: admin-manager
+description: 고권한 관리 서버 (관리자 인증, 네임스페이스 YAML 관리, 개발자 kubeconfig 발급/회수)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

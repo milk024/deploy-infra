@@ -1,0 +1,14 @@
+# monitoring-web 배포 값 (ArgoCD 기준). 2026-11-12 실제 클러스터(helm rev 13)에서 이전.
+# image.tag 는 CI(infra-ci)가 갱신한다.
+image:
+  repository: gpu.example.ac.kr/myorg/monitoring-web
+  tag: 9bf93b4d8f93e5be490c354dc9532b55937cf660
+  pullPolicy: IfNotPresent
+  pullSecretName: gitea-registry-cred
+replicaCount: 1
+service:
+  name: local-ops-gui-svc
+  port: 80
+  targetPort: 8080
+config:
+  BACKEND_HOST: k8s-manager-svc.infra.svc.cluster.local:8000

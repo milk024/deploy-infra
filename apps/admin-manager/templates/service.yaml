@@ -1,0 +1,13 @@
+# ClusterIP. 외부 경로는 httproute.yaml (gateway.enabled)
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: admin-manager
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}

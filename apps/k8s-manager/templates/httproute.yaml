@@ -1,0 +1,53 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: k8s-manager-route
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.existingGatewayName }}
+      namespace: {{ .Release.Namespace }}
+      {{- if .Values.gateway.existingGatewaySectionName }}
+      sectionName: {{ .Values.gateway.existingGatewaySectionName }}
+      {{- end }}
+  {{- if .Values.gateway.hostname }}
+  hostnames:
+    - {{ .Values.gateway.hostname }}
+  {{- end }}
+  rules:
+{{- /* 2026-11-12: 외부에서는 GUI nginx 의 /api-k8s-m 로만 접근. 웹훅은 클러스터 내부 주소로 직접 호출.
+       예전 직접 경로(/api, /socket.io, /webhook)는 legacyApiPaths=true 일 때만 노출 */}}
+{{- if .Values.gateway.legacyApiPaths }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: k8s-manager-svc
+          port: {{ .Values.service.port }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /socket.io
+      backendRefs:
+        - name: k8s-manager-svc
+          port: {{ .Values.service.port }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /webhook
+      backendRefs:
+        - name: k8s-manager-svc
+          port: {{ .Values.service.port }}
+{{- end }}
+{{- if .Values.gateway.exposeGui }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.gateway.guiPathPrefix }}
+      backendRefs:
+        - name: {{ .Values.gateway.guiServiceName }}
+          port: {{ .Values.gateway.guiServicePort }}
+{{- end }}
+{{- end }}

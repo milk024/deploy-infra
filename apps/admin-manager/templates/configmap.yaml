@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-manager-config
+  namespace: {{ .Release.Namespace }}
+data:
+{{- range $k, $v := .Values.config }}
+  {{ $k }}: {{ $v | quote }}
+{{- end }}
+  # 발급 화면 선택지 = admin-manager 가 RoleBinding 을 가진 네임스페이스 (rbac.namespaces 와 같은 목록)
+  ISSUABLE_NAMESPACES: {{ if .Values.rbac.clusterWide }}""{{ else }}{{ join "," .Values.rbac.namespaces | quote }}{{ end }}

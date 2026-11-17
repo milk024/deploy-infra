@@ -1,0 +1,37 @@
+# k8s-manager 배포 값 (ArgoCD 기준). 2026-11-12 실제 클러스터(helm rev 25)에서 이전.
+# 비밀값(GITEA_WEBHOOK_SECRET, GITEA_TOKEN)은 여기에 두지 않는다 — Secret k8s-manager-secret / k8s-manager-gitea-token 은 클러스터에서 별도 관리.
+# image.tag 는 CI(infra-ci)가 갱신한다.
+image:
+  repository: gpu.example.ac.kr/myorg/k8s-manager
+  tag: ef1fb7f380a0e192be5202c223bc4d119d83759a
+  pullPolicy: IfNotPresent
+  pullSecretName: gitea-registry-cred   # infra-ci 읽기 전용 토큰 (k8s-manager-registry-secret 은 gitea_admin 비밀번호라 폐기)
+replicaCount: 1
+service:
+  port: 8000
+config:
+  PORT: '8000'
+  ALLOWED_ORIGINS: ''
+  K8S_NAMESPACE: infra
+  GITEA_BASE_URL: http://gitea-http.infra.svc.cluster.local:3000
+  PROMETHEUS_BASE_URL: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+  MIRROR_REGISTRY_URL: ''
+  MONITOR_POLL_INTERVAL_MS: '5000'
+giteaTokenSecretName: k8s-manager-gitea-token
+# 모니터링 웹 로그인 토큰 검증용 JWT_SECRET 을 가진 Secret (admin-manager 와 공유)
+authJwtSecretName: admin-manager-app
+gateway:
+  enabled: true
+  existingGatewayName: infra-gateway
+  existingGatewaySectionName: https
+  hostname: gpu.example.ac.kr
+  tlsSecretName: wildcard-myorg-tls
+  exposeGui: true
+  guiPathPrefix: /
+  legacyApiPaths: false
+  guiServiceName: local-ops-gui-svc
+  guiServicePort: 80
+persistence:
+  enabled: false
+  storageClassName: nfs-csi
+  size: 1Gi

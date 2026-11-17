@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: admin-manager
+  template:
+    metadata:
+      labels:
+        app: admin-manager
+    spec:
+      serviceAccountName: admin-manager
+{{- if .Values.image.pullSecretName }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+        # 이미지의 USER node 는 이름이라 kubelet 이 root 여부를 확인하지 못한다 → node 이미지의 uid 를 명시
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: admin-manager
+          image: "{{ .Values.image.repository }}:{{ required "image.tag is required (CI 가 채움)" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          envFrom:
+            - configMapRef:
+                name: admin-manager-config
+            - secretRef:
+                name: {{ .Values.dbSecretName }}
+            - secretRef:
+                name: {{ .Values.appSecretName }}
+{{- if .Values.giteaMgmtSecretName }}
+            # GITEA_MGMT_TOKEN (gitea-mgmt-svc, site admin) — Gitea 사용자·팀 관리
+            - secretRef:
+                name: {{ .Values.giteaMgmtSecretName }}
+{{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
